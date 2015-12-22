@@ -1,0 +1,8 @@
+Package: myphone
+Title: Extract Data from an iPhone Backup
+Version: 0.0.0.9000
+Authors@R: person("Matthew", "Flickinger", email = "mrflick@gmail.com", role = c("aut", "cre"))
+Description: This package allows you to extract data from an iPhone backup file (on a Mac)
+Depends: R (>= 3.2.2)
+License: What license is it under?
+LazyData: true
