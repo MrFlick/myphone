@@ -6,3 +6,6 @@ Description: This package allows you to extract data from an iPhone backup file 
 Depends: R (>= 3.2.2)
 License: What license is it under?
 LazyData: true
+BugReports: https://github.com/mrflick/myphone/issues
+Imports:
+	RSQLite
