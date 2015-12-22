@@ -18,3 +18,7 @@ read_sms_data <- function(dir = list_backups()[1], db = "3d0d7e5fb2ce288813306e4
     	"ORDER BY m.rowid ASC;")
     RSQLite::dbGetQuery(conn=con, statement=sql)
 }
+
+get_sms_attachment_path <- function(dir = list_backups()[1], filename) {
+	file.path(dir, sapply(gsub("~/","MediaDomain-", filename), digest::digest, algo="sha1", serialize=FALSE))
+}

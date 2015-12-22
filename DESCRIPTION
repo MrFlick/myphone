@@ -8,4 +8,5 @@ License: GPL-3
 LazyData: true
 BugReports: https://github.com/mrflick/myphone/issues
 Imports:
-	RSQLite
+	RSQLite,
+	digest
