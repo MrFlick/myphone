@@ -24,7 +24,6 @@ get_sms_attachment_path <- function(dir = list_backups()[1], filename) {
 	file.path(dir, sapply(gsub("~/","MediaDomain-", filename), digest::digest, algo="sha1", serialize=FALSE))
 }
 
-#http://forums.macrumors.com/threads/how-to-convert-addressbook-sqlitedb-to-csv-or-similar.1350341/
 read_contacts <- function(dir = list_backups()[1], db = "31bb7ba8914766d4ba40d6dfb6113c8b614be442") {
     con <- RSQLite::dbConnect(drv=RSQLite::SQLite(), dbname=file.path(dir, db))
     sql <- paste0("select ABPerson.prefix, ABPerson.first,ABPerson.last, c.value as MobilePhone, ",
