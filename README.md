@@ -1,6 +1,6 @@
 # myphone
 
-An R package to extract SMS contents (text and attachments) from iPhone backup files (on a Mac)
+An R package to extract contents from unencrypted iPhone backup files (SMS messages and address book/contacts)
 
 ## Usage
 
