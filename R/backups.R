@@ -1,7 +1,17 @@
 
+path_expand <- function(x) {
+	m <- gregexpr("%[^%]+%", x)
+	if (any(sapply(max,m)!=-1) {
+		vals <- regmatches(x,m)
+		vars <- Map(function(x) substring(x, 2, nchar(x)-1), vals)
+		expanded <- Map(Sys.getenv, vars)
+		regmatches(x,m) <- expanded
+	}
+	path.expand(x)
+}
 
-list_backups <- function(dir = ifelse(.Platform$OS.type=="windows","%APPDATA%\\Roaming\\Apple Computer\\MobileSync\\Backup","~/Library/Application\ Support/MobileSync/Backup")) {
-	list.dirs(dir, recursive=FALSE)
+list_backups <- function(dir = ifelse(.Platform$OS.type=="windows","%APPDATA%\\Apple Computer\\MobileSync\\Backup","~/Library/Application\ Support/MobileSync/Backup")) {
+	list.dirs(path_expand(dir), recursive=FALSE)
 }
 
 read_sms_data <- function(dir = list_backups()[1], db = "3d0d7e5fb2ce288813306e4d4636395e047a3d28") {
