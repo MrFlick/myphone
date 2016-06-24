@@ -1,6 +1,6 @@
 
 
-list_backups <- function(dir = ifelse(.Platform$OS.type=="windows","%APPDATA%\Roaming\Apple Computer\MobileSync\Backup","~/Library/Application\ Support/MobileSync/Backup")) {
+list_backups <- function(dir = ifelse(.Platform$OS.type=="windows","%APPDATA%\\Roaming\\Apple Computer\\MobileSync\\Backup","~/Library/Application\ Support/MobileSync/Backup")) {
 	list.dirs(dir, recursive=FALSE)
 }
 
