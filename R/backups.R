@@ -1,7 +1,7 @@
 
 path_expand <- function(x) {
 	m <- gregexpr("%[^%]+%", x)
-	if (any(sapply(max,m)!=-1) {
+	if (any(sapply(m, max)!=-1)) {
 		vals <- regmatches(x,m)
 		vars <- Map(function(x) substring(x, 2, nchar(x)-1), vals)
 		expanded <- Map(Sys.getenv, vars)
