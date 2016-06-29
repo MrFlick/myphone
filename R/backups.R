@@ -22,7 +22,7 @@ read_sms_data <- function(dir = list_backups()[1], db = "3d0d7e5fb2ce288813306e4
     	"CASE WHEN date_read > 0 THEN DATETIME(date_read + 978307200, 'unixepoch') WHEN date_delivered > 0 THEN DATETIME(date_delivered + 978307200, 'unixepoch') ELSE NULL END as 'read_deliver_date', ",
     	"text as text, ma.attachment_id, a.filename, ", 
     	"CASE a.is_outgoing WHEN 0 THEN 'incoming' WHEN 1 THEN 'outgoing' ELSE NULL END as direction, ",
-    	"a.total_bytes, cm.rowid as chat FROM message m ",
+    	"a.total_bytes, cm.chat_id as chat FROM message m ",
     	"INNER JOIN handle h ON h.rowid = m.handle_id ",
     	"LEFT OUTER JOIN message_attachment_join ma ON ma.message_id=m.rowid ",
     	"LEFT OUTER JOIN attachment a ON ma.attachment_id=a.rowid ",
