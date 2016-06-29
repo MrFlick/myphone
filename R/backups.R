@@ -28,7 +28,10 @@ read_sms_data <- function(dir = list_backups()[1], db = "3d0d7e5fb2ce288813306e4
     	"LEFT OUTER JOIN attachment a ON ma.attachment_id=a.rowid ",
     	"LEFT OUTER JOIN chat_message_join cm ON cm.message_id = m.rowid ",
     	"ORDER BY m.rowid ASC;")
-    dplyr::tbl_df(RSQLite::dbGetQuery(conn=con, statement=sql))
+    dd<-RSQLite::dbGetQuery(conn=con, statement=sql)
+    dd$message_date <- as.POSIXct(dd$message_date)
+    dd$read_deliver_date <- as.POSIXct(dd$read_deliver_date)
+    dplyr::tbl_df(dd)
 }
 
 get_sms_attachment_path <- function(dir = list_backups()[1], filename) {
