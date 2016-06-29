@@ -28,7 +28,7 @@ read_sms_data <- function(dir = list_backups()[1], db = "3d0d7e5fb2ce288813306e4
     	"LEFT OUTER JOIN attachment a ON ma.attachment_id=a.rowid ",
     	"LEFT OUTER JOIN chat_message_join cm ON cm.message_id = m.rowid ",
     	"ORDER BY m.rowid ASC;")
-    RSQLite::dbGetQuery(conn=con, statement=sql)
+    dplyr::tbl_df(RSQLite::dbGetQuery(conn=con, statement=sql))
 }
 
 get_sms_attachment_path <- function(dir = list_backups()[1], filename) {
@@ -58,5 +58,5 @@ read_contacts <- function(dir = list_backups()[1], db = "31bb7ba8914766d4ba40d6d
     dd <- RSQLite::dbGetQuery(conn=con, statement=sql)
     dd$contact <- dd$email_phone;
     dd$contact[dd$type=="phone"] <- sanitize_phone_number(dd$contact[dd$type=="phone"])
-    dd
+    dplyr::tbl_df(dd)
 }
