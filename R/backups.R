@@ -14,6 +14,56 @@ list_backups <- function(dir = ifelse(.Platform$OS.type=="windows","%APPDATA%\\A
 	list.dirs(path_expand(dir), recursive=FALSE)
 }
 
+get_backups <- function() {
+	lapply(list_backups(), function(x) {
+		z <- list(path=x);
+		manifest_path <- file.path(x, "Manifest.db");
+		if(file.exists(manifest_path)) {
+			z$manifest = manifest_path
+		}
+		class(z) <- "ios_backup";
+		z
+	})
+}
+
+ios_hash <- function(x) {
+	sapply(x, digest::digest, algo="sha1", serialize=FALSE)
+}
+
+get_backup_file_path <- function(backup, file, domain="") {
+	if (!is.null(backup$manifest)) {
+		# newer files have a manifest.db to find the file hashes
+		con <- RSQLite::dbConnect(drv=RSQLite::SQLite(), dbname=backup$manifest)
+		hashes <- apply(cbind(file, domain), 1, function(x) {
+			f <- x[1]
+			d <- x[2]
+			sql <- "select fileID from Files where relativePath='%s'"
+			if (nchar(d)>0) {
+				sql <- sprintf(paste0(sql, " and domain='%s'"))
+				sql <- sprintf(sql, f, d)
+			} else {
+				sql <- sprintf(sql, f)
+			}
+			dd <- RSQLite::dbGetQuery(conn=con, statement=sql)
+			if (nrow(dd)<1) {
+				NA
+			} else if (nrow(dd)==1) {
+				dd$fileID[1]
+			} else {
+				warning(sprintf("multiple files (%d) found for %s (%s)", nrow(dd), f, d))
+				dd$fileID[1]
+			}
+		})
+		RSQLite::dbConnect(con)
+		# newer backups have folders for the first two characters of the hash
+		file.path(backup$path, substr(hashes,1,2), hashes)
+	} else {
+		file <- paste0(ifelse(nchar(domain)>0, paste0(domain, "-"), ""), file)
+		hashes <- ios_hash(file)
+		file.path(backup$path, hashes)
+	}
+}
+
 read_sms_data <- function(dir = list_backups()[1], db = "3d0d7e5fb2ce288813306e4d4636395e047a3d28") {
     con <- RSQLite::dbConnect(drv=RSQLite::SQLite(), dbname=file.path(dir, db))
     sql <- paste0("SELECT m.rowid as message_id, DATETIME(date + 978307200, 'unixepoch', 'localtime') as message_date, ", 
