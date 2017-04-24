@@ -15,22 +15,70 @@ list_backups <- function(dir = ifelse(.Platform$OS.type=="windows","%APPDATA%\\A
 }
 
 get_backups <- function() {
-	lapply(list_backups(), function(x) {
-		z <- list(path=x);
-		manifest_path <- file.path(x, "Manifest.db");
-		if(file.exists(manifest_path)) {
-			z$manifest = manifest_path
-		}
-		class(z) <- "ios_backup";
-		z
-	})
+	lapply(list_backups(), get_backup)
+}
+
+is_directory <- function(x) {
+	x <- as.character(x)
+	r <- file.exists(x)
+	r[r] <- file.info(x[r])$isdir
+	r
+}
+
+sort_mtime <- function(x) {
+	fi <- file.info(x)
+	x[order(fi$mtime, decreasing=TRUE)]
+}
+
+get_backup <- function(x=1) {
+	stopifnot(length(x)==1)
+	if (is.factor(x)) {x <- as.character(x)}
+	if ("ios_backup" %in% class(x)) {
+		return(x)
+	}
+	if (is.character(x) && is_directory(x)) {
+		path <- x
+	} else {
+		paths <- sort_mtime(list_backups())
+		bu_names <- basename(paths)
+		if (is.numeric(x)) {
+			path <- paths[x]
+		} else if (x %in% bu_names) {
+			path <- paths[x==bu_names]
+		} else {
+			matches <- grep(x, bu_names, value=TRUE)
+			if (length(matches)==1) {
+				path <- matches
+			} else {
+				stop(paste("multiple matches for", x, ":", 
+					paste(matches, collapse=",")))
+			}
+		} 
+	}
+	z <- list(path=path, name=basename(path))
+	manifest_path <- file.path(path, "Manifest.db");
+	if(file.exists(manifest_path)) {
+		z$manifest = manifest_path
+	}
+	class(z) <- "ios_backup";
+	z
 }
 
 ios_hash <- function(x) {
 	sapply(x, digest::digest, algo="sha1", serialize=FALSE)
 }
 
+manifest_contents <- function(x, table="Files") {
+	x <- get_backup(x)
+	if (!"manifest" %in% names(x)) {
+		stop("cannot find manifest contents")
+	}
+	db <- dplyr::src_sqlite(x$manifest)
+	dplyr::tbl(db, table)
+}
+
 get_backup_file_path <- function(backup, file, domain="") {
+	backup <- get_backup(backup)
 	if (!is.null(backup$manifest)) {
 		# newer files have a manifest.db to find the file hashes
 		con <- RSQLite::dbConnect(drv=RSQLite::SQLite(), dbname=backup$manifest)
