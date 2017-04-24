@@ -108,28 +108,35 @@ get_backup_file_path <- function(backup, file, domain="") {
 	}
 }
 
-read_sms_data <- function(dir = list_backups()[1], db = "3d0d7e5fb2ce288813306e4d4636395e047a3d28") {
-    con <- RSQLite::dbConnect(drv=RSQLite::SQLite(), dbname=file.path(dir, db))
-    sql <- paste0("SELECT m.rowid as message_id, DATETIME(date + 978307200, 'unixepoch', 'localtime') as message_date, ", 
-    	"h.id as contact, m.service as service, ",
-    	"CASE is_from_me WHEN 0 THEN 'received' WHEN 1 THEN 'sent' ELSE 'unknown' END as type, ",
+read_sms_data <- function(x, collect=TRUE) {
+	if (is.character(x) && length(x)==1 && file.exists(x)) {
+		path <- x
+	} else {
+		path <- get_backup_file_path(x, file="Library/SMS/sms.db", domain="HomeDomain")
+	}
+    sql <- paste0("SELECT m.rowid as 'message_id', ",
+		"DATETIME(date + 978307200, 'unixepoch', 'localtime') as 'message_date', ", 
+    	"h.id as 'contact', m.service as 'service', ",
+    	"CASE is_from_me WHEN 0 THEN 'received' WHEN 1 THEN 'sent' ELSE 'unknown' END as 'type', ",
     	"CASE WHEN date_read > 0 THEN DATETIME(date_read + 978307200, 'unixepoch') WHEN date_delivered > 0 THEN DATETIME(date_delivered + 978307200, 'unixepoch') ELSE NULL END as 'read_deliver_date', ",
-    	"text as text, ma.attachment_id, a.filename, ", 
-    	"CASE a.is_outgoing WHEN 0 THEN 'incoming' WHEN 1 THEN 'outgoing' ELSE NULL END as direction, ",
-    	"a.total_bytes, cm.chat_id as chat FROM message m ",
+    	"text as 'text', ma.attachment_id, a.filename, ", 
+    	"CASE a.is_outgoing WHEN 0 THEN 'incoming' WHEN 1 THEN 'outgoing' ELSE NULL END as 'direction', ",
+    	"a.total_bytes, cm.chat_id as 'chat' FROM message m ",
     	"INNER JOIN handle h ON h.rowid = m.handle_id ",
     	"LEFT OUTER JOIN message_attachment_join ma ON ma.message_id=m.rowid ",
     	"LEFT OUTER JOIN attachment a ON ma.attachment_id=a.rowid ",
     	"LEFT OUTER JOIN chat_message_join cm ON cm.message_id = m.rowid ",
-    	"ORDER BY m.rowid ASC;")
-    dd<-RSQLite::dbGetQuery(conn=con, statement=sql)
-    dd$message_date <- as.POSIXct(dd$message_date)
-    dd$read_deliver_date <- as.POSIXct(dd$read_deliver_date)
-    dplyr::tbl_df(dd)
+    	"ORDER BY m.rowid ASC")
+    dd <- dplyr::tbl(dplyr::src_sqlite(path), dplyr::sql(sql))
+	if (collect) {
+    	dd <- dplyr::mutate(dplyr::collect(dd), message_date = as.POSIXct(message_date),
+		read_deliver_date = as.POSIXct(read_deliver_date))
+	}
+	dd
 }
 
 get_sms_attachment_path <- function(dir = list_backups()[1], filename) {
-	file.path(dir, sapply(gsub("~/","MediaDomain-", filename), digest::digest, algo="sha1", serialize=FALSE))
+	file.path(dir, sapply(gsub("~/","MediaDomain-", filename), ios_hash))
 }
 
 get_emoji <- function(x) {
@@ -144,16 +151,22 @@ sanitize_phone_number <- function(x) {
 	pn
 }
 
-read_contacts <- function(dir = list_backups()[1], db = "31bb7ba8914766d4ba40d6dfb6113c8b614be442") {
-    con <- RSQLite::dbConnect(drv=RSQLite::SQLite(), dbname=file.path(dir, db))
+read_contacts <- function(x, collect=TRUE) {
+	if (is.character(x) && length(x)==1 && file.exists(x)) {
+		path <- x
+	} else {
+		path <- get_backup_file_path(x, file="Library/AddressBook/AddressBook.sqlitedb", domain="HomeDomain")
+	}
     sql <- paste0("select ABPerson.ROWID as contact_id, ABPerson.first,ABPerson.last, ",
     	"v.value as email_phone, ",
     	"CASE v.property WHEN 3 THEN 'phone' WHEN 4 THEN 'email' END as type ",
 		"from ABPerson left outer join ABMultiValue c on c.record_id = ABPerson.ROWID and c.label = 1 and c.property= 3 ",
 		"left outer join ABMultiValue v on v.record_id = ABPerson.ROWID ",
 		"where v.property in (3,4)")
-    dd <- RSQLite::dbGetQuery(conn=con, statement=sql)
-    dd$contact <- dd$email_phone;
-    dd$contact[dd$type=="phone"] <- sanitize_phone_number(dd$contact[dd$type=="phone"])
-    dplyr::tbl_df(dd)
+    dd <- dplyr::tbl(dplyr::src_sqlite(path), dplyr::sql(sql))
+	if (collect) {
+		dd <- dplyr::mutate(dplyr::collect(dd), contact = email_phone)
+		dd$contact[dd$type=="phone"] <- sanitize_phone_number(dd$contact[dd$type=="phone"])
+	}
+	dd
 }
