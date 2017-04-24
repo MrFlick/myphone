@@ -31,11 +31,11 @@ sort_mtime <- function(x) {
 }
 
 get_backup <- function(x=1) {
-	stopifnot(length(x)==1)
 	if (is.factor(x)) {x <- as.character(x)}
 	if ("ios_backup" %in% class(x)) {
 		return(x)
 	}
+	stopifnot(length(x)==1)
 	if (is.character(x) && is_directory(x)) {
 		path <- x
 	} else {
@@ -68,12 +68,12 @@ ios_hash <- function(x) {
 	sapply(x, digest::digest, algo="sha1", serialize=FALSE)
 }
 
-manifest_contents <- function(x, table="Files") {
-	x <- get_backup(x)
-	if (!"manifest" %in% names(x)) {
+manifest_contents <- function(backup, table="Files") {
+	backup <- get_backup(backup)
+	if (!"manifest" %in% names(backup)) {
 		stop("cannot find manifest contents")
 	}
-	db <- dplyr::src_sqlite(x$manifest)
+	db <- dplyr::src_sqlite(backup$manifest)
 	dplyr::tbl(db, table)
 }
 
@@ -81,18 +81,15 @@ get_backup_file_path <- function(backup, file, domain="") {
 	backup <- get_backup(backup)
 	if (!is.null(backup$manifest)) {
 		# newer files have a manifest.db to find the file hashes
-		con <- RSQLite::dbConnect(drv=RSQLite::SQLite(), dbname=backup$manifest)
+		manifest <- manifest_contents(backup)
 		hashes <- apply(cbind(file, domain), 1, function(x) {
-			f <- x[1]
-			d <- x[2]
-			sql <- "select fileID from Files where relativePath='%s'"
+			f <- unname(x[1])
+			d <- unname(x[2])
+			where <- list(~relativePath==f)
 			if (nchar(d)>0) {
-				sql <- sprintf(paste0(sql, " and domain='%s'"))
-				sql <- sprintf(sql, f, d)
-			} else {
-				sql <- sprintf(sql, f)
+				where <- c(where, ~domain == d)
 			}
-			dd <- RSQLite::dbGetQuery(conn=con, statement=sql)
+			dd <- dplyr::collect(dplyr::filter_(manifest, .dots=where))
 			if (nrow(dd)<1) {
 				NA
 			} else if (nrow(dd)==1) {
@@ -102,7 +99,6 @@ get_backup_file_path <- function(backup, file, domain="") {
 				dd$fileID[1]
 			}
 		})
-		RSQLite::dbConnect(con)
 		# newer backups have folders for the first two characters of the hash
 		file.path(backup$path, substr(hashes,1,2), hashes)
 	} else {
