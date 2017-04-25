@@ -1,3 +1,11 @@
+#' Read contacts database
+#'
+#' Extract data from the Address Book in an iOS Backup.
+#'
+#' @param x An \code{ios_backup} object (oe somethin that can be passed
+#' to \code{get_backup}) or the path to a sqlite AddressBook database.
+#' @param collect Should dplyr results be collected before being returned.
+
 read_contacts <- function(x, collect=TRUE) {
 	if (is.character(x) && length(x)==1 && file.exists(x)) {
 		path <- x
