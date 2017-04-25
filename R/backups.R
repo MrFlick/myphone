@@ -30,6 +30,16 @@ sort_mtime <- function(x) {
 	x[order(fi$mtime, decreasing=TRUE)]
 }
 
+#' Get iOS Backup
+#'
+#' Find iOS backup path
+#'
+#' @param x If unspecified, returns the newest back-up. You can also
+#'   specify a full path to a backup or a partial name that will be
+#'   matched against known backup names
+#' @return An object of class \code{ios_backup}
+#' @export
+
 get_backup <- function(x=1) {
 	if (is.factor(x)) {x <- as.character(x)}
 	if ("ios_backup" %in% class(x)) {
@@ -64,8 +74,15 @@ get_backup <- function(x=1) {
 	z
 }
 
-get_backups <- function() {
-	lapply(list_backups(), get_backup)
+#' Get iOS Backups
+#'
+#' Find all iOS backup paths
+#'
+#' @return A list of all backups in backup folder
+#' @export
+
+get_backups <- function(...) {
+	lapply(list_backups(...), get_backup)
 }
 
 manifest_contents <- function(backup, table="Files") {

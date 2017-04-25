@@ -12,6 +12,17 @@ to \code{get_backup}) or the path to a sqlite AddressBook database.}
 
 \item{collect}{Should dplyr results be collected before being returned.}
 }
+\value{
+This will return a tibble with the contact data.
+  If \code{collect==FALSE}, it will be a lazy tibble.
+  The following columns will be included
+\itemize{
+\item{contact_id} A unique ID for each contact
+\item{first} Contact first name
+\item{last} Contact last name
+\item{emain_phone} Contact e-mail or phone number
+}
+}
 \description{
 Extract data from the Address Book in an iOS Backup.
 }
