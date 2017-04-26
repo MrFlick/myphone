@@ -85,16 +85,61 @@ get_backups <- function(...) {
 	lapply(list_backups(...), get_backup)
 }
 
-manifest_contents <- function(backup, table="Files") {
+#' Return manifest contents
+#'
+#' List all files in a backup from the manifest
+#'
+#' A manifest file is a database that tracks all of the files in a backup.
+#' The fileID has traditioanally been a hash of the combination of the
+#' domain and the relative bath but by looking it up in the manifest, we
+#' can be sure to extract the correct file.
+#'
+#' @param x An \code{ios_backup} object (or something that can be passed
+#' to \code{get_backup}).
+#' @param table Which table should be returned from the manifest database.
+#' @param collect Should dplyr results be collected before being returned.
+#' @return This will return a tibble with the contact data.
+#'   If \code{collect==FALSE}, it will be a lazy tibble.
+#'   The following columns will be included
+#' \itemize{
+#' \item{fileID} A unique ID for each file in the backup
+#' \item{domain} The domain where the file is used
+#' \item{flags} Flags set on the file
+#'}
+
+#' @export
+manifest_contents <- function(backup, table="Files", collect=TRUE) {
 	backup <- get_backup(backup)
 	if (!"manifest" %in% names(backup)) {
-		stop("cannot find manifest contents")
+		stop("manifest database not found in backup")
 	}
 	db <- dplyr::src_sqlite(backup$manifest)
-	dplyr::tbl(db, table)
+	dd <- dplyr::tbl(db, table)
+	if (collect) {
+		dd <- dplyr::collect(dd)
+	}
+	dd
 }
 
-get_backup_file_path <- function(backup, file, domain="") {
+#' Find file in backup
+#'
+#' Return the path for a specific file in the backup
+#'
+#' This function translates the human-readable relative file
+#' paths and domains into the fileID necessary to extract the file.
+#' If present, the manifest data for the backup is used; if not
+#' present, the path and domain are hashed as in older iOS versions.
+
+#' @param x An \code{ios_backup} object (or something that can be passed
+#' to \code{get_backup}).
+#' @param file The relative name of the file you want to find.
+#' @param domain The domain in which to search for the file.
+#' @return For each input, will return a character value with the
+#'  true path to the file on disk or NA if the location cannot be
+#'  determined (no entry in the manifest)
+#' @export
+
+backup_file_path <- function(backup, file, domain="") {
 	backup <- get_backup(backup)
 	if (!is.null(backup$manifest)) {
 		# newer files have a manifest.db to find the file hashes
