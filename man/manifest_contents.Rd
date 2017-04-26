@@ -7,12 +7,12 @@
 manifest_contents(backup, table = "Files", collect = TRUE)
 }
 \arguments{
+\item{backup}{An \code{ios_backup} object (or something that can be passed
+to \code{get_backup}).}
+
 \item{table}{Which table should be returned from the manifest database.}
 
 \item{collect}{Should dplyr results be collected before being returned.}
-
-\item{x}{An \code{ios_backup} object (or something that can be passed
-to \code{get_backup}).}
 }
 \value{
 This will return a tibble with the contact data.

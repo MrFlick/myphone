@@ -6,6 +6,9 @@
 \usage{
 get_backups(...)
 }
+\arguments{
+\item{...}{Parameters passed to \code{list_backups}}
+}
 \value{
 A list of all backups in backup folder
 }

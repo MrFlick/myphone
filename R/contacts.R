@@ -30,7 +30,7 @@ read_contacts <- function(x, collect=TRUE) {
 		"where v.property in (3,4)")
     dd <- dplyr::tbl(dplyr::src_sqlite(path), dplyr::sql(sql))
 	if (collect) {
-		dd <- dplyr::mutate(dplyr::collect(dd), contact = email_phone)
+		dd <- dplyr::mutate(dplyr::collect(dd), contact = ~email_phone)
 		dd$contact[dd$type=="phone"] <- sanitize_phone_number(dd$contact[dd$type=="phone"])
 	}
 	dd

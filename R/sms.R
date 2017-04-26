@@ -21,8 +21,8 @@ read_sms_data <- function(x, collect=TRUE) {
     	"ORDER BY m.rowid ASC")
     dd <- dplyr::tbl(dplyr::src_sqlite(path), dplyr::sql(sql))
 	if (collect) {
-    	dd <- dplyr::mutate(dplyr::collect(dd), message_date = as.POSIXct(message_date),
-		read_deliver_date = as.POSIXct(read_deliver_date))
+    	dd <- dplyr::mutate(dplyr::collect(dd), message_date = ~as.POSIXct(message_date),
+		read_deliver_date = ~as.POSIXct(read_deliver_date))
 	}
 	dd
 }

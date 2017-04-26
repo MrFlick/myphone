@@ -78,6 +78,7 @@ get_backup <- function(x=1) {
 #'
 #' Find all iOS backup paths
 #'
+#' @param ... Parameters passed to \code{list_backups}
 #' @return A list of all backups in backup folder
 #' @export
 
@@ -94,7 +95,7 @@ get_backups <- function(...) {
 #' domain and the relative bath but by looking it up in the manifest, we
 #' can be sure to extract the correct file.
 #'
-#' @param x An \code{ios_backup} object (or something that can be passed
+#' @param backup An \code{ios_backup} object (or something that can be passed
 #' to \code{get_backup}).
 #' @param table Which table should be returned from the manifest database.
 #' @param collect Should dplyr results be collected before being returned.
@@ -130,7 +131,7 @@ manifest_contents <- function(backup, table="Files", collect=TRUE) {
 #' If present, the manifest data for the backup is used; if not
 #' present, the path and domain are hashed as in older iOS versions.
 
-#' @param x An \code{ios_backup} object (or something that can be passed
+#' @param backup An \code{ios_backup} object (or something that can be passed
 #' to \code{get_backup}).
 #' @param file The relative name of the file you want to find.
 #' @param domain The domain in which to search for the file.

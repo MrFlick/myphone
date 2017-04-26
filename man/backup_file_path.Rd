@@ -7,12 +7,12 @@
 backup_file_path(backup, file, domain = "")
 }
 \arguments{
+\item{backup}{An \code{ios_backup} object (or something that can be passed
+to \code{get_backup}).}
+
 \item{file}{The relative name of the file you want to find.}
 
 \item{domain}{The domain in which to search for the file.}
-
-\item{x}{An \code{ios_backup} object (or something that can be passed
-to \code{get_backup}).}
 }
 \value{
 For each input, will return a character value with the
