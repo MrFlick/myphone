@@ -16,15 +16,19 @@ decode_plist <- function(x) {
 	vv
 }
 
+expand_object_size <- function(size, rcon) {
+	if (size==15) {
+		size_byte_size <- readBin(rcon, integer(), 1, 1, signed=FALSE)
+		size <- readBin(rcon, integer(), 1, 2^size, signed=FALSE, endian="big")
+	}
+	size
+}
+
 read_plist_object <- function(rcon, tinfo) {
 	type_size <- readBin(rcon, integer(), 1, 1, signed=FALSE)
 	type <- bitwAnd(bitwShiftR(type_size,4), 15)
 	print(type)
 	size <- bitwAnd(type_size, 15)
-	#this isn't quite right yet
-	if (size==15 & type!=0) {
-		size <- readBin(rcon, integer(), 1, 2, signed=FALSE, endian="big")
-	}
 	print(size)
 	object <- if(type==0) {
 		read_plist_singleton(rcon, size, tinfo)
@@ -32,8 +36,12 @@ read_plist_object <- function(rcon, tinfo) {
 		read_plist_integer(rcon, size, tinfo)
 	} else if (type==2) {
 		read_plist_float(rcon, size, tinfo)
+	} else if (type==3) {
+		read_plist_date(rcon, size, tinfo)
 	} else if (type==5) {
 		read_plist_sbstring(rcon, size, tinfo)
+	} else if (type==6) {
+		read_plist_dbstring(rcon, size, tinfo)
 	} else if (type==10) {
 		read_plist_array(rcon, size, tinfo)
 	} else if (type==13) {
@@ -69,23 +77,54 @@ read_plist_float <- function(rcon, size, tinfo) {
 	return(value)
 }
 
+read_plist_date <- function(rcon, size, tinfo) {
+	stopifnot(size==3)
+	value <- readBin(rcon, double(), 1, 8, signed=TRUE, endian="big")
+	value <- as.POSIXct(value, origin="2001-01-01 0:00:00 GMT")
+	return(value)
+}
+
+read_plist_binary <- function(rcon, size, tinfo) {
+	size <- expand_object_size(size, rcon)
+	value <- readBin(rcon, raw(), size)
+	return(value)
+}
+
 read_plist_sbstring <- function(rcon, size, tinfo) {
+	size <- expand_object_size(size, rcon)
 	value <- rawToChar(readBin(rcon, raw(), size))
 	return(value)
 }
 
+read_plist_dbstring <- function(rcon, size, tinfo) {
+	size <- expand_object_size(size, rcon)
+	size <- size *2
+	value <- rawToChar(readBin(rcon, raw(), size))
+	Encoding(value) <- "UTF-16"
+	return(value)
+}
 
 read_plist_array <- function(rcon, size, tinfo) {
+	size <- expand_object_size(size, rcon)
 	len <- size * tinfo$reference_size
 	values <- readBin(rcon, integer(), len, tinfo$reference_size, signed=FALSE, endian="big")
 	return(list(values=values))
 }
 
 read_plist_dictionary <- function(rcon, size, tinfo) {
+	size <- expand_object_size(size, rcon)
 	len <- size * tinfo$reference_size
 	keys <- readBin(rcon, integer(), len, tinfo$reference_size, signed=FALSE, endian="big")
 	values <- readBin(rcon, integer(), len, tinfo$reference_size, signed=FALSE, endian="big")
 	return(list(keys=keys, values=values))
+}
+
+read_plist_offset_table <- function(rcon, tinfo) {
+	seek(rcon, tinfo$table_offset, "start")
+	size <- tinfo$offset_size
+	count <- tinfo$object_count
+	value <- readBin(rcon,integer(), count, size, signed=FALSE, endian="big")
+	return(value)
 }
 
 read_plist_trailer <- function(rcon) {
