@@ -99,8 +99,7 @@ read_plist_sbstring <- function(rcon, size, tinfo) {
 read_plist_dbstring <- function(rcon, size, tinfo) {
 	size <- expand_object_size(size, rcon)
 	size <- size *2
-	value <- rawToChar(readBin(rcon, raw(), size))
-	Encoding(value) <- "UTF-16"
+	value <- iconv(list(readBin(rcon, raw(), size)), "UTF-16")
 	return(value)
 }
 
