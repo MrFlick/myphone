@@ -1,35 +1,33 @@
 decode_plist <- function(x) {
 	stopifnot(length(x)>=8)
 	rcon <- rawConnection(x)
+	on.exit(close(rcon))
 	pltype <- rawToChar(readBin(rcon, raw(), 8))
 	stopifnot(pltype %in% c("bplist00","bplist01"))
-	seek(rcon, -32, "end")
 	tinfo <- read_plist_trailer(rcon)
+	toffset <- read_plist_offset_table(rcon, tinfo)
+	print(toffset)
 	seek(rcon, 8, "start")
-	while(seek(rcon,NA) < tinfo$table_offset)
-	vv <- lapply(1:tinfo$object_count, function(i) {
-		x<-read_plist_object(rcon, tinfo)
-		print(paste(i, "------"))
-		print(x)
+	vv <- lapply(toffset, function(i) {
+		x <- read_plist_object(rcon, i, tinfo)
 		x})
-	close(rcon)
 	vv
 }
 
 expand_object_size <- function(size, rcon) {
 	if (size==15) {
 		size_byte_size <- readBin(rcon, integer(), 1, 1, signed=FALSE)
-		size <- readBin(rcon, integer(), 1, 2^size, signed=FALSE, endian="big")
+		size <- readBin(rcon, integer(), 1, 2^bitwAnd(size, 16),
+			signed=FALSE, endian="big")
 	}
 	size
 }
 
-read_plist_object <- function(rcon, tinfo) {
+read_plist_object <- function(rcon, offset, tinfo) {
+	if(!is.na(offset)) seek(rcon, offset, "start")
 	type_size <- readBin(rcon, integer(), 1, 1, signed=FALSE)
 	type <- bitwAnd(bitwShiftR(type_size,4), 15)
-	print(type)
 	size <- bitwAnd(type_size, 15)
-	print(size)
 	object <- if(type==0) {
 		read_plist_singleton(rcon, size, tinfo)
 	} else if (type==1) {
@@ -42,6 +40,8 @@ read_plist_object <- function(rcon, tinfo) {
 		read_plist_sbstring(rcon, size, tinfo)
 	} else if (type==6) {
 		read_plist_dbstring(rcon, size, tinfo)
+	} else if (type==8) {
+		read_plist_uid(rcon, size, tinfo)
 	} else if (type==10) {
 		read_plist_array(rcon, size, tinfo)
 	} else if (type==13) {
@@ -103,6 +103,11 @@ read_plist_dbstring <- function(rcon, size, tinfo) {
 	return(value)
 }
 
+read_plist_uid <- function(rcon, size, tinfo) {
+	value <- readBin(rcon, integer(), 1, 2^size, signed=FALSE, endian="big")
+	return(value)
+}
+
 read_plist_array <- function(rcon, size, tinfo) {
 	size <- expand_object_size(size, rcon)
 	len <- size * tinfo$reference_size
@@ -126,7 +131,8 @@ read_plist_offset_table <- function(rcon, tinfo) {
 	return(value)
 }
 
-read_plist_trailer <- function(rcon) {
+read_plist_trailer <- function(rcon, auto_seek=TRUE) {
+	if (auto_seek) seek(rcon, -32, "end");
 	readBin(rcon, raw(), 6, 1)
 	offset_size <- readBin(rcon, integer(), 1, 1, signed=FALSE)
 	reference_size <- readBin(rcon, integer(), 1, 1, signed=FALSE)
