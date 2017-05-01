@@ -6,12 +6,11 @@ decode_plist <- function(x) {
 	stopifnot(pltype %in% c("bplist00","bplist01"))
 	tinfo <- read_plist_trailer(rcon)
 	toffset <- read_plist_offset_table(rcon, tinfo)
-	print(toffset)
-	seek(rcon, 8, "start")
 	vv <- lapply(toffset, function(i) {
 		x <- read_plist_object(rcon, i, tinfo)
 		x})
 	vv
+	expand_object_from_values(vv, tinfo$root_number)
 }
 
 expand_object_size <- function(size, rcon) {
@@ -121,6 +120,32 @@ read_plist_dictionary <- function(rcon, size, tinfo) {
 	keys <- readBin(rcon, integer(), len, tinfo$reference_size, signed=FALSE, endian="big")
 	values <- readBin(rcon, integer(), len, tinfo$reference_size, signed=FALSE, endian="big")
 	return(list(keys=keys, values=values))
+}
+
+expand_object_from_values <- function(values, root=0) {
+	expanded_values <- vector("list", length(values))
+	get_expanded_value <- function(i) {
+		ev <- expanded_values[[i]]
+		if(!is.null(ev)) {
+			return(ev)
+		}
+		rv <- values[[i]]
+		if(is.list(rv) && "values" %in% names(rv)) {
+			idxs <- rv$values + 1
+			ev <- lapply(idxs, get_expanded_value)
+			if ("keys" %in% names(rv)) {
+				idxs <- rv$keys + 1
+				kv <- sapply(idxs, get_expanded_value)
+				names(ev) <- kv
+			}
+			expanded_values[[i]] <<- ev
+			return(ev)
+		} else {
+			expanded_values[[i]] <<- rv
+			return(rv)
+		}
+	}
+	get_expanded_value(root+1)
 }
 
 read_plist_offset_table <- function(rcon, tinfo) {
