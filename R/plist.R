@@ -1,4 +1,22 @@
-decode_plist <- function(x) {
+#' Decode binary plist data
+#'
+#' Decode binary plist data
+#'
+#' Some of the databases in the iOS backups contain columns with
+#' binary data that appear to be binary plist objects. This function
+#' can be used to decode the raw data into an proper R object.
+#'
+#' @param x A raw vector
+#' @return The data stored in the plist. Dictionaries are converted
+#'   to named lists, arrays are converted to lists, and other objects
+#'   are returned as their equivalent atomic types
+
+#' @references \url{https://en.wikipedia.org/wiki/Property_list}
+#' @references \url{http://fileformats.archiveteam.org/wiki/Property_List/Binary}
+#' @references \url{https://github.com/google/binplist/}
+#' @export
+
+decode_binary_plist <- function(x) {
 	stopifnot(length(x)>=8)
 	rcon <- rawConnection(x)
 	on.exit(close(rcon))
