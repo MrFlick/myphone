@@ -1,5 +1,12 @@
-
-
+#' Read SMS Data
+#'
+#' Return SMS messages stored in backup
+#'
+#' @param x An \code{ios_backup} object (or something that can be passed
+#' to \code{get_backup}) or the path to a sqlite SMS database.
+#' @param collect Should dplyr results be collected before being returned.
+#' @return A tibble containing SMS data
+#' @export
 read_sms_data <- function(x, collect=TRUE) {
 	if (is.character(x) && length(x)==1 && file.exists(x)) {
 		path <- x
@@ -11,7 +18,7 @@ read_sms_data <- function(x, collect=TRUE) {
     	"h.id as 'contact', m.service as 'service', ",
     	"CASE is_from_me WHEN 0 THEN 'received' WHEN 1 THEN 'sent' ELSE 'unknown' END as 'type', ",
     	"CASE WHEN date_read > 0 THEN DATETIME(date_read + 978307200, 'unixepoch') WHEN date_delivered > 0 THEN DATETIME(date_delivered + 978307200, 'unixepoch') ELSE NULL END as 'read_deliver_date', ",
-    	"text as 'text', ma.attachment_id, a.filename, ",
+    	"text as 'text', ma.attachment_id, a.filename as `attachment_filename`, ",
     	"CASE a.is_outgoing WHEN 0 THEN 'incoming' WHEN 1 THEN 'outgoing' ELSE NULL END as 'direction', ",
     	"a.total_bytes, cm.chat_id as 'chat' FROM message m ",
     	"INNER JOIN handle h ON h.rowid = m.handle_id ",
@@ -21,14 +28,26 @@ read_sms_data <- function(x, collect=TRUE) {
     	"ORDER BY m.rowid ASC")
     dd <- dplyr::tbl(dplyr::src_sqlite(path), dplyr::sql(sql))
 	if (collect) {
-    	dd <- dplyr::mutate(dplyr::collect(dd), message_date = ~as.POSIXct(message_date),
-		read_deliver_date = ~as.POSIXct(read_deliver_date))
+    	dd <- dplyr::mutate_(dplyr::collect(dd), .dots=list(message_date = ~as.POSIXct(message_date),
+		read_deliver_date = ~as.POSIXct(read_deliver_date)))
 	}
 	dd
 }
 
-sms_attachment_path <- function(dir = list_backups()[1], filename) {
-	file.path(dir, sapply(gsub("~/","MediaDomain-", filename), ios_hash))
+
+#' Find SMS attachment path
+#'
+#' Return the file path to an SMS attachment given the relative path
+#'  from the SMS database
+#' @param backup An \code{ios_backup} object 
+#' @param attachment_filename The attachment filename from the SMS database
+#' @return The full path to the attachment file in the backup
+#' @export
+
+sms_attachment_path <- function(backup, attachment_filename) {
+	backup <- get_backup(backup)
+	filename <- gsub("^(~/|/var/mobile/)", "", attachment_filename)
+	backup_file_path(backup, filename, "MediaDomain")
 }
 
 grep_emoji <- function(x) {

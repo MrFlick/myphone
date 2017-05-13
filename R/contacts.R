@@ -2,7 +2,7 @@
 #'
 #' Extract data from the Address Book in an iOS Backup.
 #'
-#' @param x An \code{ios_backup} object (or somethin that can be passed
+#' @param x An \code{ios_backup} object (or something that can be passed
 #' to \code{get_backup}) or the path to a sqlite AddressBook database.
 #' @param collect Should dplyr results be collected before being returned.
 #' @return This will return a tibble with the contact data.

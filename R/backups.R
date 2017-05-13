@@ -59,6 +59,8 @@ get_backup <- function(x=1) {
 			matches <- grep(x, bu_names, value=TRUE)
 			if (length(matches)==1) {
 				path <- matches
+			} else if (length(matches)==0) {
+				stop(paste("no matches for", x))				
 			} else {
 				stop(paste("multiple matches for", x, ":",
 					paste(matches, collapse=",")))

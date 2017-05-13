@@ -7,7 +7,7 @@
 read_contacts(x, collect = TRUE)
 }
 \arguments{
-\item{x}{An \code{ios_backup} object (or somethin that can be passed
+\item{x}{An \code{ios_backup} object (or something that can be passed
 to \code{get_backup}) or the path to a sqlite AddressBook database.}
 
 \item{collect}{Should dplyr results be collected before being returned.}
