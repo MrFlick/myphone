@@ -165,7 +165,9 @@ backup_file_path <- function(backup, file, domain="") {
 			}
 		})
 		# newer backups have folders for the first two characters of the hash
-		file.path(backup$path, substr(hashes,1,2), hashes)
+		paths <- hashes
+		paths[!is.na(paths)] <- file.path(backup$path, substr(paths[!is.na(paths)],1,2), paths[!is.na(paths)])
+		paths
 	} else {
 		file <- paste0(ifelse(nchar(domain)>0, paste0(domain, "-"), ""), file)
 		hashes <- ios_hash(file)
