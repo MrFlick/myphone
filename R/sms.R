@@ -50,8 +50,17 @@ sms_attachment_path <- function(backup, attachment_filename) {
 	backup_file_path(backup, filename, "MediaDomain")
 }
 
+#' Find emojis in text
+#'
+#' Extract emojis from text
+
+#' @param x A character vector 
+#' @return A list the same length as \code{x} with a vector
+#'  of emoji-like symbols found in the text
+#' @export
+
 grep_emoji <- function(x) {
-	emoji <- gregexpr("[\U0001F300-\U0001F64F]", x)
+	emoji <- gregexpr("[\U0001F300-\U0001F64F]", as.character(x))
 	regmatches(x, emoji)
 }
 
