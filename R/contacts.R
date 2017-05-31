@@ -79,14 +79,14 @@ read_contact_entities <- function(x, collect=TRUE) {
     	"ABPerson.first as first_name, ABPerson.last as last_name, ABPerson.middle as middle_name, ",
      	"ABPerson.Organization as organization, ABPerson.Department as department, ",
 		"ABPerson.JobTitle as jobtitle, ",
-		"ABPerson.Birthday as birthday, ",
-		"ABPerson.CreationDate as creation_date ",
+		"DATETIME(cast(ABPerson.Birthday as decimal) + 978307200, 'unixepoch', 'localtime') as birthday, ",
+		"DATETIME(ABPerson.CreationDate + 978307200, 'unixepoch', 'localtime') as creation_date ",
 		"FROM ABPerson")
 	dd <- dplyr::tbl(dplyr::src_sqlite(path), dplyr::sql(sql))
 	if (collect) {
 		dd <- dplyr::mutate_(dplyr::collect(dd), .dots=list(
-			creation_date = ~as.POSIXct(creation_date, origin="2001-01-01"),
-			birthday = ~as.POSIXct(as.numeric(birthday), origin="2001-01-01")
+			creation_date = ~as.POSIXct(creation_date),
+			birthday = ~as.POSIXct(birthday)
 		))
 	}
 	dd
