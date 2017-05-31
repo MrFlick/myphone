@@ -22,6 +22,11 @@ Some of the databases in the iOS backups contain columns with
 binary data that appear to be binary plist objects. This function
 can be used to decode the raw data into an proper R object.
 }
+\examples{
+example <- system.file("extdata", "example.bplist", package = "myphone")
+bytes <- readBin(example, "raw", n=file.size(example))
+decode_binary_plist(bytes)
+}
 \references{
 \url{https://en.wikipedia.org/wiki/Property_list}
 

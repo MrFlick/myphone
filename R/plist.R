@@ -10,6 +10,10 @@
 #' @return The data stored in the plist. Dictionaries are converted
 #'   to named lists, arrays are converted to lists, and other objects
 #'   are returned as their equivalent atomic types
+#' @examples
+#' example <- system.file("extdata", "example.bplist", package = "myphone")
+#' bytes <- readBin(example, "raw", n=file.size(example))
+#' decode_binary_plist(bytes)
 
 #' @references \url{https://en.wikipedia.org/wiki/Property_list}
 #' @references \url{http://fileformats.archiveteam.org/wiki/Property_List/Binary}
