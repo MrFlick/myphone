@@ -1,3 +1,20 @@
+#' SMS data path
+#'
+#' Returns the full path to the SMS database
+#'
+#' @param x An \code{ios_backup} object (or something that can be passed
+#'   to \code{get_backup})
+#' @return The full path to the SMS database file
+#' @export
+
+path_sms <- function(x) {
+	if (is.character(x) && length(x)==1 && file.exists(x)) {
+		path <- x
+	} else {
+		path <- backup_file_path(x, file="Library/SMS/sms.db", domain="HomeDomain")
+	}
+}
+
 #' Read SMS Data
 #'
 #' Return SMS messages stored in backup
@@ -8,11 +25,7 @@
 #' @return A tibble containing SMS data
 #' @export
 read_sms_data <- function(x, collect=TRUE) {
-	if (is.character(x) && length(x)==1 && file.exists(x)) {
-		path <- x
-	} else {
-		path <- backup_file_path(x, file="Library/SMS/sms.db", domain="HomeDomain")
-	}
+	path <- path_sms(x)
     sql <- paste0("SELECT m.rowid as 'message_id', ",
 		"DATETIME(date + 978307200, 'unixepoch', 'localtime') as 'message_date', ",
     	"h.id as 'contact', m.service as 'service', ",
