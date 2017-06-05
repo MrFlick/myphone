@@ -125,22 +125,26 @@ read_plist_dbstring <- function(rcon, size, tinfo) {
 }
 
 read_plist_uid <- function(rcon, size, tinfo) {
-	value <- readBin(rcon, integer(), 1, 2^size, signed=FALSE, endian="big")
+	value <- readBin(rcon, integer(), 1, 2^size, 
+		signed=FALSE, endian="big")
 	return(value)
 }
 
 read_plist_array <- function(rcon, size, tinfo) {
 	size <- expand_object_size(size, rcon)
 	len <- size * tinfo$reference_size
-	values <- readBin(rcon, integer(), len, tinfo$reference_size, signed=FALSE, endian="big")
+	values <- readBin(rcon, integer(), len, tinfo$reference_size, 
+		signed=FALSE, endian="big")
 	return(list(values=values))
 }
 
 read_plist_dictionary <- function(rcon, size, tinfo) {
 	size <- expand_object_size(size, rcon)
 	len <- size * tinfo$reference_size
-	keys <- readBin(rcon, integer(), len, tinfo$reference_size, signed=FALSE, endian="big")
-	values <- readBin(rcon, integer(), len, tinfo$reference_size, signed=FALSE, endian="big")
+	keys <- readBin(rcon, integer(), len, tinfo$reference_size, 
+		signed=FALSE, endian="big")
+	values <- readBin(rcon, integer(), len, tinfo$reference_size, 
+		signed=FALSE, endian="big")
 	return(list(keys=keys, values=values))
 }
 
@@ -179,7 +183,7 @@ read_plist_offset_table <- function(rcon, tinfo) {
 }
 
 read_plist_trailer <- function(rcon, auto_seek=TRUE) {
-	if (auto_seek) seek(rcon, -32, "end");
+	if (auto_seek) seek(rcon, -32, "end")
 	readBin(rcon, raw(), 6, 1)
 	offset_size <- readBin(rcon, integer(), 1, 1, signed=FALSE)
 	reference_size <- readBin(rcon, integer(), 1, 1, signed=FALSE)
