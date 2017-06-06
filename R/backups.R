@@ -1,7 +1,7 @@
 
 path_expand <- function(x) {
 	m <- gregexpr("%[^%]+%", x)
-	if (any(sapply(m, max)!=-1)) {
+	if (any(vapply(m, max, numeric(1))!=-1)) {
 		vals <- regmatches(x,m)
 		vars <- Map(function(x) substring(x, 2, nchar(x)-1), vals)
 		expanded <- Map(Sys.getenv, vars)
@@ -22,7 +22,7 @@ is_directory <- function(x) {
 }
 
 ios_hash <- function(x) {
-	sapply(x, digest::digest, algo="sha1", serialize=FALSE)
+	vapply(x, digest::digest, character(1), algo="sha1", serialize=FALSE)
 }
 
 sort_mtime <- function(x) {
@@ -68,11 +68,11 @@ get_backup <- function(x=1) {
 		}
 	}
 	z <- list(path=path, name=basename(path))
-	manifest_path <- file.path(path, "Manifest.db");
+	manifest_path <- file.path(path, "Manifest.db")
 	if(file.exists(manifest_path)) {
-		z$manifest = manifest_path
+		z$manifest <- manifest_path
 	}
-	class(z) <- "ios_backup";
+	class(z) <- "ios_backup"
 	z
 }
 
@@ -160,13 +160,15 @@ backup_file_path <- function(backup, file, domain="") {
 			} else if (nrow(dd)==1) {
 				dd$fileID[1]
 			} else {
-				warning(sprintf("multiple files (%d) found for %s (%s)", nrow(dd), f, d))
+				warning(sprintf("multiple files (%d) found for %s (%s)", 
+					nrow(dd), f, d))
 				dd$fileID[1]
 			}
 		})
 		# newer backups have folders for the first two characters of the hash
 		paths <- hashes
-		paths[!is.na(paths)] <- file.path(backup$path, substr(paths[!is.na(paths)],1,2), paths[!is.na(paths)])
+		paths[!is.na(paths)] <- file.path(backup$path, 
+			substr(paths[!is.na(paths)],1,2), paths[!is.na(paths)])
 		paths
 	} else {
 		file <- paste0(ifelse(nchar(domain)>0, paste0(domain, "-"), ""), file)
