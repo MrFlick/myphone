@@ -1,11 +1,12 @@
 Package: myphone
 Title: Extract Data from an iPhone Backup
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: person("Matthew", "Flickinger", email = "mrflick@gmail.com", role = c("aut", "cre"))
 Description: Functions to extract data from an unencrypted iPhone backup file.
 Depends: R (>= 3.2.2)
 License: GPL-3
 LazyData: true
+URL: https://github.com/mrflick/myphone/
 BugReports: https://github.com/mrflick/myphone/issues
 Imports:
 	RSQLite,
