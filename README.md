@@ -9,20 +9,14 @@ Here's some sample code
 ```
 devtools::install_github("mrflick/myphone");
 
-backups <- list_backups();
-if ( length(backups)>0 ) {
-	bkfile <- backups[1];
-	sms <- read_sms_data(bkfile);
+backup <- get_backup();
+sms <- read_sms_data(backup);
 
-	#count sent/recieved
-	table(sms$Type)
+#count sent/recieved
+table(sms$type)
 
-	#distribution of sms lenth
-	hist(nchar(sms$Text))
-		
-} else {
-	print("No backups found!");
-}
+#distribution of sms lenth
+hist(nchar(sms$text))		
 ```
 
 ## References

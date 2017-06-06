@@ -1,7 +1,7 @@
 
 path_expand <- function(x) {
 	m <- gregexpr("%[^%]+%", x)
-	if (any(sapply(m, max)!=-1)) {
+	if (any(vapply(m, max, numeric(1))!=-1)) {
 		vals <- regmatches(x,m)
 		vars <- Map(function(x) substring(x, 2, nchar(x)-1), vals)
 		expanded <- Map(Sys.getenv, vars)
@@ -14,52 +14,165 @@ list_backups <- function(dir = ifelse(.Platform$OS.type=="windows","%APPDATA%\\A
 	list.dirs(path_expand(dir), recursive=FALSE)
 }
 
-read_sms_data <- function(dir = list_backups()[1], db = "3d0d7e5fb2ce288813306e4d4636395e047a3d28") {
-    con <- RSQLite::dbConnect(drv=RSQLite::SQLite(), dbname=file.path(dir, db))
-    sql <- paste0("SELECT m.rowid as message_id, DATETIME(date + 978307200, 'unixepoch', 'localtime') as message_date, ", 
-    	"h.id as contact, m.service as service, ",
-    	"CASE is_from_me WHEN 0 THEN 'received' WHEN 1 THEN 'sent' ELSE 'unknown' END as type, ",
-    	"CASE WHEN date_read > 0 THEN DATETIME(date_read + 978307200, 'unixepoch') WHEN date_delivered > 0 THEN DATETIME(date_delivered + 978307200, 'unixepoch') ELSE NULL END as 'read_deliver_date', ",
-    	"text as text, ma.attachment_id, a.filename, ", 
-    	"CASE a.is_outgoing WHEN 0 THEN 'incoming' WHEN 1 THEN 'outgoing' ELSE NULL END as direction, ",
-    	"a.total_bytes, cm.chat_id as chat FROM message m ",
-    	"INNER JOIN handle h ON h.rowid = m.handle_id ",
-    	"LEFT OUTER JOIN message_attachment_join ma ON ma.message_id=m.rowid ",
-    	"LEFT OUTER JOIN attachment a ON ma.attachment_id=a.rowid ",
-    	"LEFT OUTER JOIN chat_message_join cm ON cm.message_id = m.rowid ",
-    	"ORDER BY m.rowid ASC;")
-    dd<-RSQLite::dbGetQuery(conn=con, statement=sql)
-    dd$message_date <- as.POSIXct(dd$message_date)
-    dd$read_deliver_date <- as.POSIXct(dd$read_deliver_date)
-    dplyr::tbl_df(dd)
+is_directory <- function(x) {
+	x <- as.character(x)
+	r <- file.exists(x)
+	r[r] <- file.info(x[r])$isdir
+	r
 }
 
-get_sms_attachment_path <- function(dir = list_backups()[1], filename) {
-	file.path(dir, sapply(gsub("~/","MediaDomain-", filename), digest::digest, algo="sha1", serialize=FALSE))
+ios_hash <- function(x) {
+	vapply(x, digest::digest, character(1), algo="sha1", serialize=FALSE)
 }
 
-get_emoji <- function(x) {
-	emoji <- gregexpr("[\U0001F300-\U0001F64F]", x)
-	regmatches(x, emoji)
+sort_mtime <- function(x) {
+	fi <- file.info(x)
+	x[order(fi$mtime, decreasing=TRUE)]
 }
 
-sanitize_phone_number <- function(x) {
-	pn<-gsub("\\D","", x)
-	pn[nchar(pn)==10] <- paste0("1",pn[nchar(pn)==10])
-	pn[nchar(pn)==11] <- paste0("+",pn[nchar(pn)==11])
-	pn
+#' Get iOS Backup
+#'
+#' Find iOS backup path
+#'
+#' @param x If unspecified, returns the newest back-up. You can also
+#'   specify a full path to a backup or a partial name that will be
+#'   matched against known backup names
+#' @return An object of class \code{ios_backup}
+#' @export
+
+get_backup <- function(x=1) {
+	if (is.factor(x)) {x <- as.character(x)}
+	if ("ios_backup" %in% class(x)) {
+		return(x)
+	}
+	stopifnot(length(x)==1)
+	if (is.character(x) && is_directory(x)) {
+		path <- x
+	} else {
+		paths <- sort_mtime(list_backups())
+		bu_names <- basename(paths)
+		if (is.numeric(x)) {
+			path <- paths[x]
+		} else if (x %in% bu_names) {
+			path <- paths[x==bu_names]
+		} else {
+			matches <- grep(x, bu_names, value=TRUE)
+			if (length(matches)==1) {
+				path <- matches
+			} else if (length(matches)==0) {
+				stop(paste("no matches for", x))				
+			} else {
+				stop(paste("multiple matches for", x, ":",
+					paste(matches, collapse=",")))
+			}
+		}
+	}
+	z <- list(path=path, name=basename(path))
+	manifest_path <- file.path(path, "Manifest.db")
+	if(file.exists(manifest_path)) {
+		z$manifest <- manifest_path
+	}
+	class(z) <- "ios_backup"
+	z
 }
 
-read_contacts <- function(dir = list_backups()[1], db = "31bb7ba8914766d4ba40d6dfb6113c8b614be442") {
-    con <- RSQLite::dbConnect(drv=RSQLite::SQLite(), dbname=file.path(dir, db))
-    sql <- paste0("select ABPerson.ROWID as contact_id, ABPerson.first,ABPerson.last, ",
-    	"v.value as email_phone, ",
-    	"CASE v.property WHEN 3 THEN 'phone' WHEN 4 THEN 'email' END as type ",
-		"from ABPerson left outer join ABMultiValue c on c.record_id = ABPerson.ROWID and c.label = 1 and c.property= 3 ",
-		"left outer join ABMultiValue v on v.record_id = ABPerson.ROWID ",
-		"where v.property in (3,4)")
-    dd <- RSQLite::dbGetQuery(conn=con, statement=sql)
-    dd$contact <- dd$email_phone;
-    dd$contact[dd$type=="phone"] <- sanitize_phone_number(dd$contact[dd$type=="phone"])
-    dplyr::tbl_df(dd)
+#' Get iOS Backups
+#'
+#' Find all iOS backup paths
+#'
+#' @param ... Parameters passed to \code{list_backups}
+#' @return A list of all backups in backup folder
+#' @export
+
+get_backups <- function(...) {
+	lapply(list_backups(...), get_backup)
+}
+
+#' Return manifest contents
+#'
+#' List all files in a backup from the manifest
+#'
+#' A manifest file is a database that tracks all of the files in a backup.
+#' The fileID has traditioanally been a hash of the combination of the
+#' domain and the relative bath but by looking it up in the manifest, we
+#' can be sure to extract the correct file.
+#'
+#' @param backup An \code{ios_backup} object (or something that can be passed
+#' to \code{get_backup}).
+#' @param table Which table should be returned from the manifest database.
+#' @param collect Should dplyr results be collected before being returned.
+#' @return This will return a tibble with the contact data.
+#'   If \code{collect==FALSE}, it will be a lazy tibble.
+#'   The following columns will be included
+#' \itemize{
+#' \item{fileID} A unique ID for each file in the backup
+#' \item{domain} The domain where the file is used
+#' \item{flags} Flags set on the file
+#'}
+
+#' @export
+manifest_contents <- function(backup, table="Files", collect=TRUE) {
+	backup <- get_backup(backup)
+	if (!"manifest" %in% names(backup)) {
+		stop("manifest database not found in backup")
+	}
+	db <- dplyr::src_sqlite(backup$manifest)
+	dd <- dplyr::tbl(db, table)
+	if (collect) {
+		dd <- dplyr::collect(dd)
+	}
+	dd
+}
+
+#' Find file in backup
+#'
+#' Return the path for a specific file in the backup
+#'
+#' This function translates the human-readable relative file
+#' paths and domains into the fileID necessary to extract the file.
+#' If present, the manifest data for the backup is used; if not
+#' present, the path and domain are hashed as in older iOS versions.
+
+#' @param backup An \code{ios_backup} object (or something that can be passed
+#' to \code{get_backup}).
+#' @param file The relative name of the file you want to find.
+#' @param domain The domain in which to search for the file.
+#' @return For each input, will return a character value with the
+#'  true path to the file on disk or NA if the location cannot be
+#'  determined (no entry in the manifest)
+#' @export
+
+backup_file_path <- function(backup, file, domain="") {
+	backup <- get_backup(backup)
+	if (!is.null(backup$manifest)) {
+		# newer files have a manifest.db to find the file hashes
+		manifest <- manifest_contents(backup)
+		hashes <- apply(cbind(file, domain), 1, function(x) {
+			f <- unname(x[1])
+			d <- unname(x[2])
+			where <- list(~relativePath==f)
+			if (nchar(d)>0) {
+				where <- c(where, ~domain == d)
+			}
+			dd <- dplyr::collect(dplyr::filter_(manifest, .dots=where))
+			if (nrow(dd)<1) {
+				NA
+			} else if (nrow(dd)==1) {
+				dd$fileID[1]
+			} else {
+				warning(sprintf("multiple files (%d) found for %s (%s)", 
+					nrow(dd), f, d))
+				dd$fileID[1]
+			}
+		})
+		# newer backups have folders for the first two characters of the hash
+		paths <- hashes
+		paths[!is.na(paths)] <- file.path(backup$path, 
+			substr(paths[!is.na(paths)],1,2), paths[!is.na(paths)])
+		paths
+	} else {
+		file <- paste0(ifelse(nchar(domain)>0, paste0(domain, "-"), ""), file)
+		hashes <- ios_hash(file)
+		file.path(backup$path, hashes)
+	}
 }
