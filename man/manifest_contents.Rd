@@ -33,3 +33,10 @@ The fileID has traditioanally been a hash of the combination of the
 domain and the relative bath but by looking it up in the manifest, we
 can be sure to extract the correct file.
 }
+\examples{
+\dontrun{
+backup <- get_backup()
+files <- manifest_contents(backup)
+nrow(files)
+}
+}

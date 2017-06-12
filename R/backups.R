@@ -38,6 +38,10 @@ sort_mtime <- function(x) {
 #'   specify a full path to a backup or a partial name that will be
 #'   matched against known backup names
 #' @return An object of class \code{ios_backup}
+#'@examples
+#'\dontrun{
+#' backup <- get_backup()
+#'}	
 #' @export
 
 get_backup <- function(x=1) {
@@ -82,6 +86,13 @@ get_backup <- function(x=1) {
 #'
 #' @param ... Parameters passed to \code{list_backups}
 #' @return A list of all backups in backup folder
+#'@examples
+#'\dontrun{
+#' backups <- get_backups()
+#' if (length(backups)) {
+#'   Map(function(x) {x$path}, backups)
+#' }
+#'}
 #' @export
 
 get_backups <- function(...) {
@@ -109,7 +120,12 @@ get_backups <- function(...) {
 #' \item{domain} The domain where the file is used
 #' \item{flags} Flags set on the file
 #'}
-
+#'@examples
+#'\dontrun{
+#' backup <- get_backup()
+#' files <- manifest_contents(backup)
+#' nrow(files)
+#'}
 #' @export
 manifest_contents <- function(backup, table="Files", collect=TRUE) {
 	backup <- get_backup(backup)
@@ -140,6 +156,12 @@ manifest_contents <- function(backup, table="Files", collect=TRUE) {
 #' @return For each input, will return a character value with the
 #'  true path to the file on disk or NA if the location cannot be
 #'  determined (no entry in the manifest)
+#'@examples
+#'\dontrun{
+#' backup <- get_backup()
+#' backup_file_path(backup, file="Library/AddressBook/AddressBook.sqlitedb", 
+#'   domain="HomeDomain")
+#'}
 #' @export
 
 backup_file_path <- function(backup, file, domain="") {

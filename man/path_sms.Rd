@@ -16,3 +16,9 @@ The full path to the SMS database file
 \description{
 Returns the full path to the SMS database
 }
+\examples{
+\dontrun{
+backup <- get_backup()
+path_sms(backup)
+}
+}

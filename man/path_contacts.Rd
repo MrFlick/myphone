@@ -16,3 +16,9 @@ The full path to the address book database file
 \description{
 Returns the full path to the Address Book database
 }
+\examples{
+\dontrun{
+backup <- get_backup()
+path_contacts(backup)
+}
+}

@@ -26,3 +26,18 @@ This will return a tibble with the contact data.
 \description{
 Extract data from the Address Book in an iOS Backup.
 }
+\examples{
+\dontrun{
+backup <- get_backup()
+read_contacts(backup)
+
+#Read a copy
+orig <- path_contacts(backup)
+mycopy <- file.path(getwd(), "contacts.sqlitedb")
+file.copt(orig, mycopy)
+read_contacts(mycopy)
+
+#Join with SMS
+read_sms_data(backup) \%>\% left_join(read_contacts(backup))
+}
+}

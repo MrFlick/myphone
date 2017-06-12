@@ -15,3 +15,11 @@ A list of all backups in backup folder
 \description{
 Find all iOS backup paths
 }
+\examples{
+\dontrun{
+backups <- get_backups()
+if (length(backups)) {
+  Map(function(x) {x$path}, backups)
+}
+}
+}

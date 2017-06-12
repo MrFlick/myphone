@@ -5,6 +5,11 @@
 #' @param x An \code{ios_backup} object (or something that can be passed
 #'   to \code{get_backup})
 #' @return The full path to the address book database file
+#'@examples
+#'\dontrun{
+#' backup <- get_backup()
+#' path_contacts(backup)
+#'}
 #' @export
 
 path_contacts <- function(x) {
@@ -30,6 +35,20 @@ path_contacts <- function(x) {
 #' \item{first} Contact first name
 #' \item{last} Contact last name
 #' \item{emain_phone} Contact e-mail or phone number
+#'}
+#'@examples
+#'\dontrun{
+#' backup <- get_backup()
+#' read_contacts(backup)
+#'
+#' #Read a copy
+#' orig <- path_contacts(backup)
+#' mycopy <- file.path(getwd(), "contacts.sqlitedb")
+#' file.copt(orig, mycopy)
+#' read_contacts(mycopy)
+#'
+#' #Join with SMS
+#' read_sms_data(backup) %>% left_join(read_contacts(backup))
 #'}
 #' @export
 

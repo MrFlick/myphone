@@ -18,3 +18,18 @@ A tibble containing SMS data
 \description{
 Return SMS messages stored in backup
 }
+\examples{
+\dontrun{
+backup <- get_backup()
+read_sms_data(backup)
+
+#Read a copy
+orig <- path_sms(backup)
+mycopy <- file.path(getwd(), "sms.sqlitedb")
+file.copt(orig, mycopy)
+read_contacts(mycopy)
+
+#Join with Contacts
+read_sms_data(backup) \%>\% left_join(read_contacts(backup))
+}
+}

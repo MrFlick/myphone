@@ -5,6 +5,11 @@
 #' @param x An \code{ios_backup} object (or something that can be passed
 #'   to \code{get_backup})
 #' @return The full path to the SMS database file
+#'@examples
+#'\dontrun{
+#' backup <- get_backup()
+#' path_sms(backup)
+#'}
 #' @export
 
 path_sms <- function(x) {
@@ -23,6 +28,20 @@ path_sms <- function(x) {
 #' to \code{get_backup}) or the path to a sqlite SMS database.
 #' @param collect Should dplyr results be collected before being returned.
 #' @return A tibble containing SMS data
+#'@examples
+#'\dontrun{
+#' backup <- get_backup()
+#' read_sms_data(backup)
+#'
+#' #Read a copy
+#' orig <- path_sms(backup)
+#' mycopy <- file.path(getwd(), "sms.sqlitedb")
+#' file.copt(orig, mycopy)
+#' read_contacts(mycopy)
+#'
+#' #Join with Contacts
+#' read_sms_data(backup) %>% left_join(read_contacts(backup))
+#'}
 #' @export
 read_sms_data <- function(x, collect=TRUE) {
 	path <- path_sms(x)
@@ -56,6 +75,12 @@ read_sms_data <- function(x, collect=TRUE) {
 #' @param backup An \code{ios_backup} object 
 #' @param attachment_filename The attachment filename from the SMS database
 #' @return The full path to the attachment file in the backup
+#'@examples
+#'\dontrun{
+#' backup <- get_backup()
+#' sms <- read_sms_data(backup)
+#' sms_attachment_path(backup, na.omit(sms$attachment_filename))
+#'}
 #' @export
 
 sms_attachment_path <- function(backup, attachment_filename) {

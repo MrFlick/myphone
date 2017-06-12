@@ -28,3 +28,10 @@ paths and domains into the fileID necessary to extract the file.
 If present, the manifest data for the backup is used; if not
 present, the path and domain are hashed as in older iOS versions.
 }
+\examples{
+\dontrun{
+backup <- get_backup()
+backup_file_path(backup, file="Library/AddressBook/AddressBook.sqlitedb", 
+  domain="HomeDomain")
+}
+}

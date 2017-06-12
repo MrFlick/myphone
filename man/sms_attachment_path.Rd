@@ -18,3 +18,10 @@ The full path to the attachment file in the backup
 Return the file path to an SMS attachment given the relative path
  from the SMS database
 }
+\examples{
+\dontrun{
+backup <- get_backup()
+sms <- read_sms_data(backup)
+sms_attachment_path(backup, na.omit(sms$attachment_filename))
+}
+}

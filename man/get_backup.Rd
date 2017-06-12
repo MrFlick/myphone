@@ -17,3 +17,8 @@ An object of class \code{ios_backup}
 \description{
 Find iOS backup path
 }
+\examples{
+\dontrun{
+backup <- get_backup()
+}	
+}
