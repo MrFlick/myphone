@@ -2,6 +2,10 @@
 
 An R package to extract contents from unencrypted iPhone backup files (SMS messages and address book/contacts)
 
+To create an unencrypted backup, connect your iPhone to your computer and open iTunes. Find the 
+phone in the Devices list and open the main "Summary" page to see the Backup settings. Uncheck
+the check box for "Encrypt iPhone backup" and then click "Back Up Now".
+
 ## Usage
 
 Here's some sample code 
