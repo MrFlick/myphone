@@ -11,5 +11,6 @@ BugReports: https://github.com/mrflick/myphone/issues
 Imports:
 	RSQLite,
 	digest,
+	rlang,
 	dplyr
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1

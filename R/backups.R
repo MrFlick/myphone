@@ -162,6 +162,7 @@ manifest_contents <- function(backup, table="Files", collect=TRUE) {
 #' backup_file_path(backup, file="Library/AddressBook/AddressBook.sqlitedb", 
 #'   domain="HomeDomain")
 #'}
+#' @importFrom rlang .data
 #' @export
 
 backup_file_path <- function(backup, file, domain="") {
@@ -172,11 +173,12 @@ backup_file_path <- function(backup, file, domain="") {
 		hashes <- apply(cbind(file, domain), 1, function(x) {
 			f <- unname(x[1])
 			d <- unname(x[2])
-			where <- list(~relativePath==f)
 			if (nchar(d)>0) {
-				where <- c(where, ~domain == d)
+				where <- rlang::quos(.data$relativePath==f, .data$domain == d)
+			} else {
+			  where <- rlang::quos(.data$relativePath==f)
 			}
-			dd <- dplyr::collect(dplyr::filter_(manifest, .dots=where))
+			dd <- dplyr::collect(dplyr::filter(manifest, !!!where))
 			if (nrow(dd)<1) {
 				NA
 			} else if (nrow(dd)==1) {

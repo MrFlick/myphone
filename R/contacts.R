@@ -50,6 +50,7 @@ path_contacts <- function(x) {
 #' #Join with SMS
 #' read_sms_data(backup) %>% left_join(read_contacts(backup))
 #'}
+#' @importFrom rlang .data
 #' @export
 
 read_contacts <- function(x, collect=TRUE) {
@@ -62,7 +63,7 @@ read_contacts <- function(x, collect=TRUE) {
 		"where v.property in (3,4)")
     dd <- dplyr::tbl(dplyr::src_sqlite(path), dplyr::sql(sql))
 	if (collect) {
-		dd <- dplyr::mutate_(dplyr::collect(dd), .dots=list(contact = ~email_phone))
+		dd <- dplyr::mutate(dplyr::collect(dd), contact = .data$email_phone)
 		dd$contact[dd$type=="phone"] <- sanitize_phone_number(dd$contact[dd$type=="phone"])
 	}
 	dd
@@ -90,6 +91,7 @@ read_contacts <- function(x, collect=TRUE) {
 #' \item{creation_date} Date contact created
 #'}
 #' @seealso \code{\link{read_contacts_phone_numbers}}, \code{\link{read_contacts_email_addresses}}
+#' @importFrom rlang .data
 #' @export
 
 read_contact_entities <- function(x, collect=TRUE) {
@@ -103,10 +105,10 @@ read_contact_entities <- function(x, collect=TRUE) {
 		"FROM ABPerson")
 	dd <- dplyr::tbl(dplyr::src_sqlite(path), dplyr::sql(sql))
 	if (collect) {
-		dd <- dplyr::mutate_(dplyr::collect(dd), .dots=list(
-			creation_date = ~as.POSIXct(creation_date),
-			birthday = ~as.POSIXct(birthday)
-		))
+		dd <- dplyr::mutate(dplyr::collect(dd), 
+			creation_date = as.POSIXct(.data$creation_date),
+			birthday = as.POSIXct(.data$birthday)
+		)
 	}
 	dd
 }
@@ -129,12 +131,13 @@ read_contact_entities <- function(x, collect=TRUE) {
 #' \item{phone_type} Phone number label
 #'}
 #' @seealso \code{\link{read_contact_entities}}, \code{\link{read_contacts_email_addresses}}
+#' @importFrom rlang .data
 #' @export
 
 read_contacts_phone_numbers <- function(x, collect=TRUE) {
 	path <- path_contacts(x)
 	sql <- paste0("select mv.record_id as contact_id, ",
-		"mv.identifier as identifier ",
+		"mv.identifier as identifier, ",
 		"mv.value as phone, ",
 		"mvl.value as phone_type ",
 		"from ABMultiValue as mv ",
@@ -143,9 +146,9 @@ read_contacts_phone_numbers <- function(x, collect=TRUE) {
 		"order by mv.record_id, mv.identifier")
 	dd <- dplyr::tbl(dplyr::src_sqlite(path), dplyr::sql(sql))
 	if (collect) {
-		dd <- dplyr::mutate_(dplyr::collect(dd), .dots=list(
-			phone_type = ~gsub("_\\$!<(.*)>!\\$_", "\\1", phone_type)
-		))
+		dd <- dplyr::mutate(dplyr::collect(dd), 
+			phone_type = gsub("_\\$!<(.*)>!\\$_", "\\1", .data$phone_type)
+		)
 	}
 	dd
 }
@@ -168,12 +171,13 @@ read_contacts_phone_numbers <- function(x, collect=TRUE) {
 #' \item{email_type} Email address label
 #'}
 #' @seealso \code{\link{read_contact_entities}}, \code{\link{read_contacts_phone_numbers}}
+#' @importFrom rlang .data
 #' @export
 
 read_contacts_email_addresses <- function(x, collect=TRUE) {
 	path <- path_contacts(x)
 	sql <- paste0("select mv.record_id as contact_id, ",
-		"mv.identifier as identifier ",
+		"mv.identifier as identifier, ",
 		"mv.value as email, ",
 		"mvl.value as email_type ",
 		"from ABMultiValue as mv ",
@@ -182,9 +186,9 @@ read_contacts_email_addresses <- function(x, collect=TRUE) {
 		"order by mv.record_id, mv.identifier")
 	dd <- dplyr::tbl(dplyr::src_sqlite(path), dplyr::sql(sql))
 	if (collect) {
-		dd <- dplyr::mutate_(dplyr::collect(dd), .dots=list(
-			email_type = ~gsub("_\\$!<(.*)>!\\$_", "\\1", email_type)
-		))
+		dd <- dplyr::mutate(dplyr::collect(dd), 
+			email_type = gsub("_\\$!<(.*)>!\\$_", "\\1", .data$email_type)
+		)
 	}
 	dd
 }

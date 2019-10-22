@@ -20,6 +20,14 @@ path_sms <- function(x) {
 	}
 }
 
+date_conv <- function(field) {
+	paste0("case when LENGTH(", field, ")=18 then ",
+		"datetime(", field, "/1000000000+978307200, 'unixepoch', 'localtime') ",
+		"when LENGTH(", field, ")=9 then ",
+		"datetime(", field, " +978307200, 'unixepoch', 'localtime') ",
+		"ELSE NULL END")
+}
+
 #' Read SMS Data
 #'
 #' Return SMS messages stored in backup
@@ -42,11 +50,12 @@ path_sms <- function(x) {
 #' #Join with Contacts
 #' read_sms_data(backup) %>% left_join(read_contacts(backup))
 #'}
+#' @importFrom rlang .data
 #' @export
 read_sms_data <- function(x, collect=TRUE) {
 	path <- path_sms(x)
     sql <- paste0("SELECT m.rowid as 'message_id', ",
-		"DATETIME(date + 978307200, 'unixepoch', 'localtime') as 'message_date', ",
+		date_conv("date"), " as 'message_date', ",
     	"h.id as 'contact', m.service as 'service', ",
     	"CASE is_from_me WHEN 0 THEN 'received' WHEN 1 THEN 'sent' ELSE 'unknown' END as 'type', ",
     	"CASE WHEN date_read > 0 THEN DATETIME(date_read + 978307200, 'unixepoch') WHEN date_delivered > 0 THEN DATETIME(date_delivered + 978307200, 'unixepoch') ELSE NULL END as 'read_deliver_date', ",
@@ -60,9 +69,9 @@ read_sms_data <- function(x, collect=TRUE) {
     	"ORDER BY m.rowid ASC")
     dd <- dplyr::tbl(dplyr::src_sqlite(path), dplyr::sql(sql))
 	if (collect) {
-    	dd <- dplyr::mutate_(dplyr::collect(dd), 
-			.dots=list(message_date = ~as.POSIXct(message_date),
-		read_deliver_date = ~as.POSIXct(read_deliver_date)))
+    	dd <- dplyr::mutate(dplyr::collect(dd), 
+			message_date = as.POSIXct(.data$message_date),
+			read_deliver_date = as.POSIXct(.data$read_deliver_date))
 	}
 	dd
 }
